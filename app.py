@@ -1,7 +1,7 @@
 import os
-from flask import Flask, render_template, request, jsonify, url_for
+from flask import Flask, render_template, request, jsonify, url_for, send_from_directory
 from PIL import Image
-from reportlab.lib.pagesizes import A4, A3, landscape, portrait
+from reportlab.lib.pagesizes import C3, A4, A3, landscape, portrait
 from reportlab.pdfgen import canvas
 from io import BytesIO
 
@@ -21,6 +21,26 @@ paper_sizes = {
     'A4': (297, 210)
 }
 
+def create_pdf_with_borders(columns, rows, paper_width_pts, paper_height_pts, img_width_pts, img_height_pts, left_margin, top_margin, file_path):
+    pdf_buffer = BytesIO()
+    c = canvas.Canvas(pdf_buffer, pagesize=(paper_width_pts, paper_height_pts))
+    
+    for row in range(rows):
+        for col in range(columns):
+            x = left_margin + col * img_width_pts
+            y = paper_height_pts - top_margin - (row + 1) * img_height_pts
+            c.rect(x, y, img_width_pts, img_height_pts)
+
+    c.save()
+    pdf_buffer.seek(0)
+
+    borders_pdf_filename = "grid_with_borders.pdf"
+    borders_pdf_path = os.path.join(file_path, borders_pdf_filename)
+    with open(borders_pdf_path, "wb") as f:
+        f.write(pdf_buffer.read())
+    
+    return borders_pdf_path
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -30,32 +50,24 @@ def index():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
 
-            paper_type = request.form.get('paper_type', 'A4')
-            user_width = int(request.form.get('user_width', 500))
-            user_height = int(request.form.get('user_height', 1000))
+            paper_type = request.form.get('paper_type')
             image_size = request.form.get('image_size', '85x55')
-            
+
             # Determine paper dimensions and orientation
             if paper_type in paper_sizes:
                 paper_width, paper_height = paper_sizes[paper_type]
-                if paper_type == 'A4':
+                if paper_type == 'A3':
                     paper_width_pts, paper_height_pts = landscape((mm_to_points(paper_width), mm_to_points(paper_height)))
-                    top_margin = bottom_margin = mm_to_points(15)
-                    left_margin = mm_to_points(37)
-                    right_margin = mm_to_points(17)
                 else:
                     paper_width_pts, paper_height_pts = portrait((mm_to_points(paper_width), mm_to_points(paper_height)))
-                    top_margin = mm_to_points(15)
-                    bottom_margin = mm_to_points(15)
-                    left_margin = mm_to_points(37)
-                    right_margin = mm_to_points(17)
             else:
-                paper_width_pts = min(mm_to_points(user_width), mm_to_points(500))
-                paper_height_pts = min(mm_to_points(user_height), mm_to_points(1000))
-                top_margin = mm_to_points(15)
-                bottom_margin = mm_to_points(15)
-                left_margin = mm_to_points(37)
-                right_margin = mm_to_points(17)
+                paper_width_pts = mm_to_points(500)
+                paper_height_pts = mm_to_points(1000)
+
+            top_margin = mm_to_points(15)
+            bottom_margin = mm_to_points(15)
+            left_margin = mm_to_points(37)
+            right_margin = mm_to_points(17)
             
             available_width_pts = paper_width_pts - left_margin - right_margin
             available_height_pts = paper_height_pts - top_margin - bottom_margin
@@ -108,11 +120,19 @@ def index():
             with open(pdf_path, "wb") as f:
                 f.write(pdf_buffer.read())
 
+            # Create a separate PDF with borders
+            borders_pdf_path = create_pdf_with_borders(columns, rows, paper_width_pts, paper_height_pts, img_width_pts, img_height_pts, left_margin, top_margin, app.config['UPLOAD_FOLDER'])
+
             return jsonify({
-                'pdf_url': url_for('static', filename='uploads/' + pdf_filename)
+                'pdf_url': url_for('static', filename='uploads/' + pdf_filename),
+                'borders_pdf_url': url_for('static', filename='uploads/' + os.path.basename(borders_pdf_path))
             })
     
     return render_template('index.html')
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
     app.run(debug=True)

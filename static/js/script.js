@@ -15,7 +15,7 @@ document.getElementById('uploadForm').addEventListener('submit', function(event)
 
 function displayPDF(pdfUrl) {
     let pdfContainer = document.getElementById('pdf-container');
-    pdfContainer.innerHTML = `<iframe src="${pdfUrl}" frameborder="0" width="100%" height="600px"></iframe>`;
+    pdfContainer.innerHTML = `<iframe src="${pdfUrl}" frameborder="0"></iframe>`;
 }
 
 document.getElementById('paper_type').addEventListener('change', function() {

@@ -30,6 +30,16 @@
                         User Defined Width (mm): <input type="number" name="user_width" min="1" max="500" value="500"><br><br>
                         User Defined Height (mm): <input type="number" name="user_height" min="1" max="1000" value="1000"><br><br>
                     </div>
+                    Image Size:
+                    <select name="image_size" id="image_size" required>
+                        <option value="85x55">85mm x 55mm</option>
+                        <option value="120x95">120mm x 95mm</option>
+                        <option value="custom">Custom Size</option>
+                    </select><br><br>
+                    <div id="custom_image_size" style="display: none;">
+                        Custom Image Width (mm): <input type="number" name="custom_img_width" min="1" max="500"><br><br>
+                        Custom Image Height (mm): <input type="number" name="custom_img_height" min="1" max="500"><br><br>
+                    </div>
                     <button type="submit">Create Grid</button>
                 </form>
             </div>   

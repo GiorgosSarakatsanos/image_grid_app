@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, jsonify, url_for
 from PIL import Image
-from reportlab.lib.pagesizes import landscape
+from reportlab.lib.pagesizes import A4, A3, landscape
 from reportlab.pdfgen import canvas
 from io import BytesIO
 
@@ -13,8 +13,8 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 paper_sizes = {
     'C3': (458, 324),
-    'A3': (420, 297),
-    'A4': (297, 210)
+    'A3': A3,
+    'A4': A4
 }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -29,10 +29,16 @@ def index():
             paper_type = request.form.get('paper_type', 'A4')
             user_width = int(request.form.get('user_width', 500))
             user_height = int(request.form.get('user_height', 1000))
+            image_size = request.form.get('image_size', '85x55')
             
             # Determine paper dimensions
             if paper_type in paper_sizes:
-                paper_width, paper_height = paper_sizes[paper_type]
+                if paper_type == 'A3':
+                    paper_width, paper_height = landscape(A3)
+                elif paper_type == 'A4':
+                    paper_width, paper_height = A4
+                else:
+                    paper_width, paper_height = paper_sizes[paper_type]
             else:
                 paper_width = min(user_width, 500)
                 paper_height = min(user_height, 1000)
@@ -45,14 +51,14 @@ def index():
             available_height = paper_height - top_margin - bottom_margin
             available_width = paper_width - left_margin - right_margin
 
-            # Open the image and get its dimensions
-            image = Image.open(filepath)
-            img_width, img_height = image.size
-
-            # Convert image dimensions from pixels to mm
-            dpi = 300  # assuming image resolution is 300 dpi
-            img_width_mm = img_width / dpi * 25.4
-            img_height_mm = img_height / dpi * 25.4
+            # Determine image dimensions based on selected size
+            if image_size == '85x55':
+                img_width_mm, img_height_mm = 85, 55
+            elif image_size == '120x95':
+                img_width_mm, img_height_mm = 120, 95
+            else:
+                img_width_mm = float(request.form.get('custom_img_width'))
+                img_height_mm = float(request.form.get('custom_img_height'))
 
             # Calculate how many images fit in the available space
             columns = int(available_width // img_width_mm)
@@ -60,7 +66,7 @@ def index():
 
             # Create a PDF with the grid
             pdf_buffer = BytesIO()
-            c = canvas.Canvas(pdf_buffer, pagesize=landscape((paper_width, paper_height)))
+            c = canvas.Canvas(pdf_buffer, pagesize=(paper_width, paper_height))
 
             for row in range(rows):
                 for col in range(columns):

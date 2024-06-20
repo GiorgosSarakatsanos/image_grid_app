@@ -26,3 +26,12 @@ document.getElementById('paper_type').addEventListener('change', function() {
         userDefinedDimensions.style.display = 'none';
     }
 });
+
+document.getElementById('image_size').addEventListener('change', function() {
+    const customImageSize = document.getElementById('custom_image_size');
+    if (this.value === 'custom') {
+        customImageSize.style.display = 'block';
+    } else {
+        customImageSize.style.display = 'none';
+    }
+});

@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, url_for, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, url_for
 from PIL import Image
 from reportlab.lib.pagesizes import landscape
 from reportlab.pdfgen import canvas

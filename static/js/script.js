@@ -8,23 +8,14 @@ document.getElementById('uploadForm').addEventListener('submit', function(event)
     })
     .then(response => response.json())
     .then(data => {
-        displayImages(data.images);
-        // Show 'Print to PDF' button after displaying images
-        document.getElementById('printToPdfBtn').style.display = 'block';
+        displayPDF(data.pdf_url);
     })
     .catch(error => console.error('Error:', error));
 });
 
-function displayImages(images) {
-    let gridContainer = document.getElementById('grid-container');
-    gridContainer.innerHTML = '';
-
-    images.forEach(imageUrl => {
-        let img = document.createElement('img');
-        img.src = imageUrl;
-        img.classList.add('img-preview');
-        gridContainer.appendChild(img);
-    });
+function displayPDF(pdfUrl) {
+    let pdfContainer = document.getElementById('pdf-container');
+    pdfContainer.innerHTML = `<iframe src="${pdfUrl}" frameborder="0" width="100%" height="600px"></iframe>`;
 }
 
 document.getElementById('paper_type').addEventListener('change', function() {

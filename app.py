@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template, request, jsonify, url_for
 from PIL import Image
-from reportlab.lib.pagesizes import A4, A3, landscape
+from reportlab.lib.pagesizes import A4, A3, landscape, portrait
 from reportlab.pdfgen import canvas
 from io import BytesIO
 
@@ -11,10 +11,14 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads'
 # Ensure the upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+# Function to convert mm to points
+def mm_to_points(mm):
+    return mm * 2.83465  # 1 mm = 2.83465 points
+
 paper_sizes = {
     'C3': (458, 324),
     'A3': A3,
-    'A4': A4
+    'A4': (297, 210)
 }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -30,26 +34,32 @@ def index():
             user_width = int(request.form.get('user_width', 500))
             user_height = int(request.form.get('user_height', 1000))
             image_size = request.form.get('image_size', '85x55')
+            orientation = request.form.get('orientation', 'portrait')
             
             # Determine paper dimensions
             if paper_type in paper_sizes:
-                if paper_type == 'A3':
-                    paper_width, paper_height = landscape(A3)
-                elif paper_type == 'A4':
-                    paper_width, paper_height = A4
-                else:
-                    paper_width, paper_height = paper_sizes[paper_type]
+                paper_width, paper_height = paper_sizes[paper_type]
             else:
                 paper_width = min(user_width, 500)
                 paper_height = min(user_height, 1000)
+            
+            # Apply orientation
+            if orientation == 'landscape':
+                paper_width, paper_height = landscape((paper_width, paper_height))
+            else:
+                paper_width, paper_height = portrait((paper_width, paper_height))
+
+            # Convert paper dimensions to points
+            paper_width_pts = mm_to_points(paper_width)
+            paper_height_pts = mm_to_points(paper_height)
 
             # Margins
-            top_margin = bottom_margin = 15
-            left_margin = 37
-            right_margin = 17
+            top_margin = bottom_margin = mm_to_points(15)
+            left_margin = mm_to_points(37)
+            right_margin = mm_to_points(17)
 
-            available_height = paper_height - top_margin - bottom_margin
-            available_width = paper_width - left_margin - right_margin
+            available_width_pts = paper_width_pts - left_margin - right_margin
+            available_height_pts = paper_height_pts - top_margin - bottom_margin
 
             # Determine image dimensions based on selected size
             if image_size == '85x55':
@@ -60,19 +70,23 @@ def index():
                 img_width_mm = float(request.form.get('custom_img_width'))
                 img_height_mm = float(request.form.get('custom_img_height'))
 
+            # Convert image dimensions to points
+            img_width_pts = mm_to_points(img_width_mm)
+            img_height_pts = mm_to_points(img_height_mm)
+
             # Calculate how many images fit in the available space
-            columns = int(available_width // img_width_mm)
-            rows = int(available_height // img_height_mm)
+            columns = int(available_width_pts // img_width_pts)
+            rows = int(available_height_pts // img_height_pts)
 
             # Create a PDF with the grid
             pdf_buffer = BytesIO()
-            c = canvas.Canvas(pdf_buffer, pagesize=(paper_width, paper_height))
+            c = canvas.Canvas(pdf_buffer, pagesize=(paper_width_pts, paper_height_pts))
 
             for row in range(rows):
                 for col in range(columns):
-                    x = left_margin + col * img_width_mm
-                    y = paper_height - top_margin - (row + 1) * img_height_mm
-                    c.drawImage(filepath, x, y, width=img_width_mm, height=img_height_mm)
+                    x = left_margin + col * img_width_pts
+                    y = paper_height_pts - top_margin - (row + 1) * img_height_pts
+                    c.drawImage(filepath, x, y, width=img_width_pts, height=img_height_pts)
 
             c.save()
             pdf_buffer.seek(0)

@@ -12,13 +12,9 @@
             <div class="aside-container">
                 <h1>Upload an Image and Create a Grid</h1>
             </div>
-
-            <button onclick="document.getElementById('file').click()">Your text here</button>
-            <input type="file" id="file" style="display:none">
-
             <div class="aside-container">
-                <form id="uploadForm" action="/" method="POST" enctype="multipart/form-data">
-                    <input type="file" name="file" id="imageUpload" required><br><br>
+                <form id="uploadForm" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file" required><br><br>
                     Paper Size:
                     <select name="paper_type" id="paper_type" required>
                         <option value="C3">C3 (458mm x 324mm)</option>
@@ -26,7 +22,7 @@
                         <option value="A4">A4 (210mm x 297mm)</option>
                         <option value="user_defined">User Defined</option>
                     </select><br><br>
-                    <div id="user_defined_dimensions" style="display: none;">
+                    <div id="user_defined_dimensions">
                         User Defined Width (mm): <input type="number" name="user_width" min="1" max="500" value="500"><br><br>
                         User Defined Height (mm): <input type="number" name="user_height" min="1" max="1000" value="1000"><br><br>
                     </div>
@@ -36,20 +32,18 @@
                         <option value="120x95">120mm x 95mm</option>
                         <option value="custom">Custom Size</option>
                     </select><br><br>
-                    <div id="custom_image_size" style="display: none;">
-                        Custom Image Width (mm): <input type="number" name="custom_img_width" min="1" max="500"><br><br>
-                        Custom Image Height (mm): <input type="number" name="custom_img_height" min="1" max="500"><br><br>
+                    <div id="custom_image_size">
+                        Custom Width (mm): <input type="number" name="custom_img_width" min="1" max="500" value="85"><br><br>
+                        Custom Height (mm): <input type="number" name="custom_img_height" min="1" max="1000" value="55"><br><br>
                     </div>
                     <button type="submit">Create Grid</button>
                 </form>
-            </div>   
+            </div>
         </div>
     </aside>
-
     <div id="pdf-container">
-        <!-- PDF iframe will be inserted here by JavaScript -->
+        <!-- PDF will be displayed here -->
     </div>
-
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>
 </html>

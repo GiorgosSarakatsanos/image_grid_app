@@ -34,30 +34,29 @@ def index():
             user_width = int(request.form.get('user_width', 500))
             user_height = int(request.form.get('user_height', 1000))
             image_size = request.form.get('image_size', '85x55')
-            orientation = request.form.get('orientation', 'portrait')
             
-            # Determine paper dimensions
+            # Determine paper dimensions and orientation
             if paper_type in paper_sizes:
                 paper_width, paper_height = paper_sizes[paper_type]
+                if paper_type == 'A4':
+                    paper_width_pts, paper_height_pts = landscape((mm_to_points(paper_width), mm_to_points(paper_height)))
+                    top_margin = bottom_margin = mm_to_points(15)
+                    left_margin = mm_to_points(37)
+                    right_margin = mm_to_points(17)
+                else:
+                    paper_width_pts, paper_height_pts = portrait((mm_to_points(paper_width), mm_to_points(paper_height)))
+                    top_margin = mm_to_points(15)
+                    bottom_margin = mm_to_points(15)
+                    left_margin = mm_to_points(37)
+                    right_margin = mm_to_points(17)
             else:
-                paper_width = min(user_width, 500)
-                paper_height = min(user_height, 1000)
+                paper_width_pts = min(mm_to_points(user_width), mm_to_points(500))
+                paper_height_pts = min(mm_to_points(user_height), mm_to_points(1000))
+                top_margin = mm_to_points(15)
+                bottom_margin = mm_to_points(15)
+                left_margin = mm_to_points(37)
+                right_margin = mm_to_points(17)
             
-            # Apply orientation
-            if orientation == 'landscape':
-                paper_width, paper_height = landscape((paper_width, paper_height))
-            else:
-                paper_width, paper_height = portrait((paper_width, paper_height))
-
-            # Convert paper dimensions to points
-            paper_width_pts = mm_to_points(paper_width)
-            paper_height_pts = mm_to_points(paper_height)
-
-            # Margins
-            top_margin = bottom_margin = mm_to_points(15)
-            left_margin = mm_to_points(37)
-            right_margin = mm_to_points(17)
-
             available_width_pts = paper_width_pts - left_margin - right_margin
             available_height_pts = paper_height_pts - top_margin - bottom_margin
 
@@ -86,7 +85,20 @@ def index():
                 for col in range(columns):
                     x = left_margin + col * img_width_pts
                     y = paper_height_pts - top_margin - (row + 1) * img_height_pts
-                    c.drawImage(filepath, x, y, width=img_width_pts, height=img_height_pts)
+
+                    # Open the image to check its dimensions
+                    img = Image.open(filepath)
+                    img_width, img_height = img.size
+
+                    # Decide if image needs rotation (only for landscape orientation)
+                    if paper_type == 'A3' and img_width > img_height:
+                        c.saveState()
+                        c.translate(x, y)
+                        c.rotate(90)
+                        c.drawImage(filepath, 0, -img_width_pts, width=img_width_pts, height=img_height_pts)
+                        c.restoreState()
+                    else:
+                        c.drawImage(filepath, x, y, width=img_width_pts, height=img_height_pts)
 
             c.save()
             pdf_buffer.seek(0)

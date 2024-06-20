@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Grid App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <aside>
+        <div class="aside-wrapper">
+            <div class="aside-container">
+                <h1>Upload an Image and Create a Grid</h1>
+            </div>
+
+            <button onclick="document.getElementById('file').click()">Your text here</button>
+            <input type="file" id="file" style="display:none">
+
+            <div class="aside-container">
+                <form id="uploadForm" action="/" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file" id="imageUpload" required><br><br>
+                    Paper Size:
+                    <select name="paper_type" id="paper_type" required>
+                        <option value="C3">C3 (458mm x 324mm)</option>
+                        <option value="A3">A3 (297mm x 420mm)</option>
+                        <option value="A4">A4 (210mm x 297mm)</option>
+                        <option value="user_defined">User Defined</option>
+                    </select><br><br>
+                    <div id="user_defined_dimensions" style="display: none;">
+                        User Defined Width (mm): <input type="number" name="user_width" min="1" max="500" value="500"><br><br>
+                        User Defined Height (mm): <input type="number" name="user_height" min="1" max="1000" value="1000"><br><br>
+                    </div>
+                    <button type="submit">Create Grid</button>
+                </form>
+            </div>   
+        </div>
+    </aside>
+
+    <div id="pdf-container">
+        <!-- PDF iframe will be inserted here by JavaScript -->
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            let formData = new FormData(this);
+
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                displayPDF(data.pdf_url);
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        function displayPDF(pdfUrl) {
+            let pdfContainer = document.getElementById('pdf-container');
+            pdfContainer.innerHTML = `<iframe src="${pdfUrl}" frameborder="0" width="100%" height="600px"></iframe>`;
+        }
+
+        document.getElementById('paper_type').addEventListener('change', function() {
+            const userDefinedDimensions = document.getElementById('user_defined_dimensions');
+            if (this.value === 'user_defined') {
+                userDefinedDimensions.style.display = 'block';
+            } else {
+                userDefinedDimensions.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

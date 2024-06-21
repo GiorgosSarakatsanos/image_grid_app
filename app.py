@@ -49,7 +49,9 @@ def index():
             filename = file.filename
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
-
+            
+            
+            
             paper_type = request.form.get('paper_type')
             image_size = request.form.get('image_size', '85x55')
 
@@ -92,7 +94,24 @@ def index():
             # Create a PDF with the grid
             pdf_buffer = BytesIO()
             c = canvas.Canvas(pdf_buffer, pagesize=(paper_width_pts, paper_height_pts))
+            for row in range(rows):
+                for col in range(columns):
+                    x = left_margin + col * img_width_pts
+                    y = paper_height_pts - top_margin - (row + 1) * img_height_pts
 
+                    # Open the image to check its dimensions
+                    img = Image.open(filepath)
+                    img_width, img_height = img.size
+
+                    # Decide if image needs rotation (only for landscape orientation)
+                    if paper_type == 'A3' and img_width > img_height:
+                        c.saveState()
+                        c.translate(x, y)
+                        c.rotate(90)
+                        c.drawImage(filepath, 0, -img_width_pts, width=img_width_pts, height=img_height_pts)
+                        c.restoreState()
+                    else:
+                        c.drawImage(filepath, x, y, width=img_width_pts, height=img_height_pts)
             for row in range(rows):
                 for col in range(columns):
                     x = left_margin + col * img_width_pts
